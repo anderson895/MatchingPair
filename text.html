@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matching Pair Game</title>
+  <style>
+    .container {
+      display: flex;
+      justify-content: space-between;
+      width: 500px;
+      margin: auto;
+      padding-top: 50px;
+      position: relative;
+    }
+    .column {
+      display: flex;
+      flex-direction: column;
+    }
+    .pair {
+      padding: 10px;
+      margin: 10px;
+      background-color: lightblue;
+      border: 1px solid #333;
+      cursor: pointer;
+      text-align: center;
+    }
+    #svg-lines {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center;">Matching Pair Game</h2>
+  <div class="container" id="game-container">
+    <svg id="svg-lines"></svg>
+    <div class="column" id="left-column">
+      <div class="pair" data-pair="1">Pair 1</div>
+      <div class="pair" data-pair="2">Pair 2</div>
+      <div class="pair" data-pair="3">Pair 3</div>
+    </div>
+    <div class="column" id="right-column">
+      <div class="pair" data-pair="A">Pair A</div>
+      <div class="pair" data-pair="B">Pair B</div>
+      <div class="pair" data-pair="C">Pair C</div>
+    </div>
+  </div>
+  
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    let selectedElement = null;
+    const connections = new Map();
+
+    $(document).ready(function () {
+      $(".pair").click(function () {
+        // Determine which column the clicked element belongs to
+        const isLeftColumn = $(this).closest("#left-column").length > 0;
+
+        if (selectedElement === null) {
+          // First selection
+          selectedElement = $(this);
+          $(this).css("background-color", "lightgreen");
+        } else {
+          // Second selection - Check if from different columns
+          if (isLeftColumn !== (selectedElement.closest("#left-column").length > 0)) {
+            const element1 = selectedElement;
+            const element2 = $(this);
+
+            // Remove existing connections if any
+            removeConnection(element1);
+            removeConnection(element2);
+
+            // Draw the new line and save the connection
+            drawSVGLine(element1, element2);
+            connections.set(element1[0], element2);
+            connections.set(element2[0], element1);
+          }
+
+          // Reset styles
+          selectedElement.css("background-color", "lightblue");
+          $(this).css("background-color", "lightblue");
+          selectedElement = null;
+        }
+      });
+    });
+
+    function drawSVGLine(element1, element2) {
+      const svg = $("#svg-lines")[0];
+      const svgRect = svg.getBoundingClientRect();
+      const pos1 = element1.offset();
+      const pos2 = element2.offset();
+
+      // Calculate center coordinates relative to the SVG
+      const x1 = pos1.left - svgRect.left + element1.outerWidth() / 2;
+      const y1 = pos1.top - svgRect.top + element1.outerHeight() / 2;
+      const x2 = pos2.left - svgRect.left + element2.outerWidth() / 2;
+      const y2 = pos2.top - svgRect.top + element2.outerHeight() / 2;
+
+      // Create SVG line
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+      line.setAttribute("stroke", "red");
+      line.setAttribute("stroke-width", 2);
+
+      // Associate the line with both elements
+      element1.data("line", line);
+      element2.data("line", line);
+      svg.appendChild(line);
+    }
+
+    function removeConnection(element) {
+      const connectedElement = connections.get(element[0]);
+      if (connectedElement) {
+        // Remove the line from both elements
+        const line = element.data("line");
+        if (line) {
+          line.remove();
+        }
+        connections.delete(element[0]);
+        connections.delete(connectedElement[0]);
+      }
+    }
+  </script>
+</body>
+</html>
